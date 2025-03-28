@@ -1,0 +1,175 @@
+﻿@page "/"
+@using System.ComponentModel.DataAnnotations
+
+@rendermode InteractiveServer
+
+<div class="container-xxl text-center mt-3">
+    <div>
+        <img src="/images/obscura_b.png" class="title-img" />
+    </div>
+</div>
+<div class="container-xxl  game-container">
+    <div class="gameBoard-container">
+        <div class="poster-container">
+            <img src="/images/RaidersPoster.png" class="poster-img"/>
+            <div class="poster-overlay row row-cols-3 g-0">
+                @foreach (Square square in squareList)
+                {
+                    <div class="col overlay-block @(square.Show ? "fade-out": "")"></div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="controls-container rounded" data-bs-theme="dark">
+        <div>
+            <div class="mt-4">
+                <EditForm Model="formModel" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="hstack gap-2">
+                        <InputText class="form-control" 
+                        @bind-Value="formModel.MovieTitle"
+                        placeholder="Enter a movie title" 
+                        autocomplete="off"
+                        autocorrect="off"                            
+                        spellcheck="false" />
+                        <button class="btn btn-primary" type="submit">Guess</button>
+                    </div>
+
+                    <input type="hidden" @bind-value="formModel.ReleaseDate"/>
+                    <ValidationMessage For="() => formModel.MovieTitle" />
+                </EditForm>                
+            </div>
+            <nav class="mt-3">
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <button class="nav-link active" id="nav-hint-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#nav-hint" 
+                    type="button" 
+                    role="tab"
+                    aria-selected="true">Hints</button>
+                    <button class="nav-link" id="nav-guess-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#nav-guess"
+                    type="button"
+                    role="tab"
+                    aria-selected="false">
+                        Guesses
+                    </button>
+                </div>
+            </nav>
+            <div class="tab-content" id="nav-tabContent">
+                <div class="tab-pane border-0 fade show active" id="nav-hint" role="tabpanel" aria-labelby="nav-hint-tab" tabindex="0">
+                    <ul class="list-group mb-3" id="Hints">
+                        <li class="list-group-item">
+                            <i class="bi bi-1-square-fill me-1"></i>Hint 1 Goes here...
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-2-square-fill me-1"></i>Hint 2 Goes Here...
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-3-square-fill me-1"></i>Hint 3 Goes Here...
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-pane border-0 fade" id="nav-guess" role="tabpanel" aria-labelby="nav-guess-tab" tabindex="0">
+                    <ul class="list-group mb-3" id="Guesses">                      
+                        <li class="list-group-item">
+                            <i class="bi bi-1-square-fill me-1"></i>Guess 1 Goes here...
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-2-square-fill me-1"></i>Guess 2 Goes Here...
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-3-square-fill me-1"></i>Guess 3 Goes Here...
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+            <div class="hstack gap-2 justify-content-end">
+                <button class="btn btn-info">Play Again</button>
+                <button class="btn controls-btn">
+                    <i class="bit bi-question-circle text-secondary"></i>
+                </button>
+                <button class="btn controls-btn">
+                    <i class="bit bi-gear text-secondary"></i>
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+
+    #region State Variables
+
+    FormModel formModel = new();
+    private int squareCount = 12;
+    List<Square> squareList = new();    
+
+
+
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize the game state
+        await ResetGameState();
+
+        await showRandomSqaure();
+    }
+    #endregion
+
+    #region GameFlow
+
+    private async Task ResetGameState()
+    {
+        squareList = new();
+
+        for (int i = 1; i <= squareCount; i++)
+        {
+            Square newSqaure = new();
+            squareList.Add(newSqaure);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        await showRandomSqaure();
+    }
+
+    private async Task showRandomSqaure()
+    {
+        Random random = new Random();
+
+        List<Square> hiddenSquares = squareList.Where(s => s.Show == false).ToList();
+
+        if(hiddenSquares.Count > 0)
+        {
+            //pick a random sqaure from the list
+            int index = random.Next(hiddenSquares.Count());
+            hiddenSquares[index].Show = true;
+        }
+    }
+    #endregion
+
+    #region Models
+
+    public class FormModel
+    {
+        [Required]
+        public string? MovieTitle { get; set; }
+        public string? ReleaseDate { get; set; }
+    }
+
+    public class Square
+    {
+        public bool Show { get; set; } = false;
+    }
+
+    #endregion   
+}
