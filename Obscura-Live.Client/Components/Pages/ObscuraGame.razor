@@ -2,6 +2,7 @@
 @using System.ComponentModel.DataAnnotations
 
 @rendermode InteractiveServer
+@inject ITMDBService tmdbService
 
 <div class="container-xxl text-center mt-3">
     <div>
@@ -11,7 +12,7 @@
 <div class="container-xxl  game-container">
     <div class="gameBoard-container">
         <div class="poster-container">
-            <img src="/images/RaidersPoster.png" class="poster-img"/>
+            <img src="@randomMovie.PosterPath" class="poster-img"/>
             <div class="poster-overlay row row-cols-3 g-0">
                 @foreach (Square square in squareList)
                 {
@@ -108,9 +109,12 @@
 
     FormModel formModel = new();
     private int squareCount = 12;
+    private int yearStart = 1970;
+    private int yearEnd = 2025;
+    private string selectedGenres = "";
     List<Square> squareList = new();    
 
-
+    private Movie randomMovie = new();
 
     #endregion
 
@@ -121,10 +125,35 @@
         await ResetGameState();
 
         await showRandomSqaure();
+
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        if (firstRender || randomMovie == null)
+        {
+            await ResetGameState();
+            await NewGame();
+            await showRandomSqaure();
+            StateHasChanged();  
+        }
+
+       
     }
     #endregion
 
     #region GameFlow
+
+    private async Task NewGame()
+    {
+        randomMovie = new();
+
+        randomMovie = await tmdbService.GetRandomMovieAsync(yearStart, yearEnd, selectedGenres);
+
+       
+    }
 
     private async Task ResetGameState()
     {

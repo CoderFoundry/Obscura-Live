@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Obscura-Live</RootNamespace>
     <AssemblyName>$(AssemblyName.Replace(' ', '_'))</AssemblyName>
+    <UserSecretsId>bb0e413c-9edc-418f-ab95-b8156f191081</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
