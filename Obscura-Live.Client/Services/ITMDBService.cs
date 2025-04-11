@@ -5,5 +5,7 @@ namespace Obscura_Live.Client.Services
     public interface ITMDBService
     {
         Task<Movie> GetRandomMovieAsync(int? yearStart, int? yearEnd, string? genres);
+
+        Task<List<Movie>> SearchMoviesAsync(string query, int page = 1);
     }
 }

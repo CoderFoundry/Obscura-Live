@@ -6,13 +6,13 @@
 
 <div class="container-xxl text-center mt-3">
     <div>
-        <img src="/images/obscura_b.png" class="title-img" />
+        <img src="/images/obscura_w.png" class="title-img" />
     </div>
 </div>
 <div class="container-xxl  game-container">
     <div class="gameBoard-container">
         <div class="poster-container">
-            <img src="@randomMovie.PosterPath" class="poster-img"/>
+            <img src="@randomMovie.PosterPath" class="poster-img" />
             <div class="poster-overlay row row-cols-3 g-0">
                 @foreach (Square square in squareList)
                 {
@@ -27,27 +27,42 @@
                 <EditForm Model="formModel" OnValidSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
                     <div class="hstack gap-2">
-                        <InputText class="form-control" 
+                        <InputText class="form-control"
                         @bind-Value="formModel.MovieTitle"
-                        placeholder="Enter a movie title" 
+                        placeholder="Enter a movie title"
                         autocomplete="off"
-                        autocorrect="off"                            
-                        spellcheck="false" />
+                        autocorrect="off"
+                        spellcheck="false"
+                        @oninput="OnInputChanged" />
                         <button class="btn btn-primary" type="submit">Guess</button>
                     </div>
-
-                    <input type="hidden" @bind-value="formModel.ReleaseDate"/>
+                    <input type="hidden" @bind-value="formModel.ReleaseDate" />
                     <ValidationMessage For="() => formModel.MovieTitle" />
-                </EditForm>                
+                    <!---Show the typeahead results-->
+                    @if (movies?.Any() == true)
+                    {
+                        <div class="suggestions-wrapper">
+                            <ul class="suggestions">
+                                @foreach (var movie in movies)
+                                {
+                                    <li class="fw-bold" @onclick="() => SelectMovie(movie)">@movie.Title (@(DateTime.TryParse(movie.ReleaseDate, out var date) ? date.Year : "Unkown"))</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                </EditForm>
             </div>
             <nav class="mt-3">
                 <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                    <button class="nav-link active" id="nav-hint-tab" 
-                    data-bs-toggle="tab" 
-                    data-bs-target="#nav-hint" 
-                    type="button" 
+                    <button class="nav-link active" id="nav-hint-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#nav-hint"
+                    type="button"
                     role="tab"
-                    aria-selected="true">Hints</button>
+                    aria-selected="true">
+                        Hints
+                    </button>
                     <button class="nav-link" id="nav-guess-tab"
                     data-bs-toggle="tab"
                     data-bs-target="#nav-guess"
@@ -73,17 +88,27 @@
                     </ul>
                 </div>
                 <div class="tab-pane border-0 fade" id="nav-guess" role="tabpanel" aria-labelby="nav-guess-tab" tabindex="0">
-                    <ul class="list-group mb-3" id="Guesses">                      
-                        <li class="list-group-item">
-                            <i class="bi bi-1-square-fill me-1"></i>Guess 1 Goes here...
-                        </li>
-                        <li class="list-group-item">
-                            <i class="bi bi-2-square-fill me-1"></i>Guess 2 Goes Here...
-                        </li>
-                        <li class="list-group-item">
-                            <i class="bi bi-3-square-fill me-1"></i>Guess 3 Goes Here...
-                        </li>
+                    <ul class="list-group mb-3" id="Guesses">
+                        @for ( int i = 0; i < guesses.Count(); i++)
+                        {
+                            var guess = guesses[i];
 
+                            if (guess.Correct)
+                            {
+                                <li class="list-group-item list-group-item-success">
+                                    <i class="bi bi-@(i+1)-square-fill me-1"></i>
+                                    <span>@guess.Title (@guess.ReleaseYear)</span>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="list-group-item list-group-item-danger">
+                                    <i class="bi bi-@(i+1)-square-fill me-1"></i>
+                                    <span>@guess.Title (@guess.ReleaseYear)</span>
+                                </li>
+                            }
+
+                        }
                     </ul>
                 </div>
             </div>
@@ -112,9 +137,18 @@
     private int yearStart = 1970;
     private int yearEnd = 2025;
     private string selectedGenres = "";
-    List<Square> squareList = new();    
+    List<Square> squareList = new();
+    private List<Movie> movies = [];
+    private List<Guess> guesses = new();
 
     private Movie randomMovie = new();
+
+    //timers
+    private Timer? debounceTimer;
+    private Timer? inactivityTimer;
+    private int debounceDelay = 500; // milliseconds
+
+    private bool win = false;
 
     #endregion
 
@@ -122,9 +156,8 @@
     protected override async Task OnInitializedAsync()
     {
         // Initialize the game state
-        await ResetGameState();
-
-        await showRandomSqaure();
+        //await ResetGameState();
+        //await showRandomSqaure();
 
 
     }
@@ -132,15 +165,15 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
 
-        if (firstRender || randomMovie == null)
+        if (firstRender || randomMovie.Id== 0)
         {
             await ResetGameState();
             await NewGame();
             await showRandomSqaure();
-            StateHasChanged();  
+            StateHasChanged();
         }
 
-       
+
     }
     #endregion
 
@@ -149,10 +182,10 @@
     private async Task NewGame()
     {
         randomMovie = new();
-
+        win = false;
         randomMovie = await tmdbService.GetRandomMovieAsync(yearStart, yearEnd, selectedGenres);
 
-       
+
     }
 
     private async Task ResetGameState()
@@ -168,7 +201,30 @@
 
     private async Task HandleSubmit()
     {
-        await showRandomSqaure();
+        //check if the movie title is correct
+        if (formModel.MovieTitle?.ToLower() == randomMovie.Title?.ToLower() && formModel.ReleaseDate == randomMovie.ReleaseDate)
+        {
+            //show the movie poster
+            StateHasChanged();
+
+            //reveal the poster
+            RevealPoster();
+            win = true;
+
+        }
+        else
+        {
+            //show a new sqaure
+            await showRandomSqaure();
+            win = false;
+        }
+
+        guesses.Add(new Guess
+            {
+                Title = formModel.MovieTitle,
+                ReleaseYear = DateTime.TryParse(formModel.ReleaseDate, out var date) ? date.Year.ToString() : "Unkown",
+                Correct = win
+            });
     }
 
     private async Task showRandomSqaure()
@@ -177,13 +233,95 @@
 
         List<Square> hiddenSquares = squareList.Where(s => s.Show == false).ToList();
 
-        if(hiddenSquares.Count > 0)
+        if (hiddenSquares.Count > 0)
         {
             //pick a random sqaure from the list
             int index = random.Next(hiddenSquares.Count());
             hiddenSquares[index].Show = true;
         }
     }
+
+
+    private void RevealPoster()
+    {
+        foreach (var square in squareList)
+        {
+            square.Show = true;
+        };
+    }
+    #endregion
+
+    #region Search TypeAhead
+
+    private async Task SearchMovies()
+    {
+        //if search is empty and clear any results
+        if (string.IsNullOrWhiteSpace(formModel.MovieTitle))
+        {
+            movies.Clear();
+        }
+        else
+        {
+            try
+            {
+                var response = await tmdbService.SearchMoviesAsync(formModel.MovieTitle);
+
+                movies = response ?? new List<Movie>();
+            }
+            catch (Exception ex)
+            {
+                // Handle the exception (e.g., log it, show a message, etc.)
+                Console.WriteLine($"Error searching movies: {ex.Message}");
+                movies.Clear();
+            }
+        }
+        //trigger a ui refresh
+        StateHasChanged();
+    }
+
+    private void OnInputChanged(ChangeEventArgs e)
+    {
+        formModel.MovieTitle = e.Value?.ToString() ?? "";
+
+        //dsipose any existing timers
+        debounceTimer?.Dispose();
+
+        //create a new timee that calls search movies after a debounce delay
+        debounceTimer = new Timer(async _ =>
+        {
+
+            await InvokeAsync(async () =>
+            {
+                await SearchMovies();
+                ResetInactivityTimer();
+            });
+        }, null, debounceDelay, Timeout.Infinite);
+
+    }
+
+    private void ResetInactivityTimer()
+    {
+        inactivityTimer?.Dispose();
+
+        inactivityTimer = new Timer(_ =>
+        {
+            // Handle inactivity (e.g., show a message, log out, etc.)
+            InvokeAsync(() =>
+            {
+                movies.Clear();
+                StateHasChanged();
+
+            });
+        }, null, 10000, Timeout.Infinite); // 30 seconds of inactivity
+    }
+
+    private void SelectMovie(Movie movie)
+    {
+        formModel.MovieTitle = movie.Title;
+        formModel.ReleaseDate = movie.ReleaseDate;
+        movies.Clear();
+    }
+
     #endregion
 
     #region Models
@@ -200,5 +338,12 @@
         public bool Show { get; set; } = false;
     }
 
-    #endregion   
+    public class Guess
+    {
+        public string? Title { get; set; } = "";
+        public string? ReleaseYear { get; set; } = "";  
+        public bool Correct { get; set; } = false;
+    }
+
+    #endregion
 }

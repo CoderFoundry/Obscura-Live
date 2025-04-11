@@ -33,6 +33,8 @@
     border-radius: 20px;
 }
 
+
+
 .poster-container {
     position:relative;
     height: 450px;
@@ -107,3 +109,34 @@
 .fade-in{
     opacity: 1;
 }
+
+.suggestions-wrapper {
+    position:relative;
+}
+
+
+.suggestions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: black;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000; /*Ensure it is over the poster*/
+}
+
+    .suggestions li {
+        padding: 8px 12px;
+        cursor: pointer;
+        color: black;
+    }
+
+        .suggestions li:hover,
+        .suggestions li.active{
+            background-color: #f0f0f0;
+        }

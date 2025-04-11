@@ -117,5 +117,15 @@ namespace Obscura_Live.Services
            throw new HttpIOException(HttpRequestError.InvalidResponse, "Could not find a random movie");
            
         }
+
+        public async Task<List<Movie>> SearchMoviesAsync(string query, int page = 1)
+        {
+            var url = $"search/movie?query={query}&region=US&include_adult=false&language=en-US";
+
+            MovieResponse response = await _http.GetFromJsonAsync<MovieResponse>(url, _jsonOptions)
+                ?? throw new HttpIOException(HttpRequestError.InvalidResponse, "Search results could not be loaded");
+
+            return response.Results.Where(r => r.VoteCount > 150).ToList();
+        }
     }
 }
