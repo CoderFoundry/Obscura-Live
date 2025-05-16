@@ -1,0 +1,21 @@
+﻿
+@if (IsVisible)
+{
+<div class="overlay @(IsWin ? "win" : "loss")">
+    <div class="result-card text-center">
+        <h1>@(IsWin ? "You Got It" : "Game Over Loser")</h1>
+        <p>
+          @(IsWin ? $"You guessed {MovieTitle} in {Guesses} guesses!" : $"The movie was: {MovieTitle}.")
+        </p>
+        <button class="btn btn-primary mt-3" @onclick="OnClose">Close</button>
+    </div>
+</div>
+}
+@code {
+    [Parameter] public bool IsVisible { get; set; }    
+    [Parameter] public bool IsWin{ get; set; }
+    [Parameter] public string? MovieTitle { get; set; } 
+    [Parameter] public int Guesses { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+}

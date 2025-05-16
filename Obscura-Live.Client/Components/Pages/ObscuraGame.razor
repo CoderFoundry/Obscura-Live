@@ -76,20 +76,20 @@
             <div class="tab-content" id="nav-tabContent">
                 <div class="tab-pane border-0 fade show active" id="nav-hint" role="tabpanel" aria-labelby="nav-hint-tab" tabindex="0">
                     <ul class="list-group mb-3" id="Hints">
-                        <li class="list-group-item">
-                            <i class="bi bi-1-square-fill me-1"></i>Hint 1 Goes here...
-                        </li>
-                        <li class="list-group-item">
-                            <i class="bi bi-2-square-fill me-1"></i>Hint 2 Goes Here...
-                        </li>
-                        <li class="list-group-item">
-                            <i class="bi bi-3-square-fill me-1"></i>Hint 3 Goes Here...
-                        </li>
+                        @foreach(var hint in hints.OrderBy(h=> h.Order))
+                        {
+                            if(guesses.Count + 1 >= hint.Order || hint.show)
+                            {
+                                <li class="list-group-item">
+                                    <i class="bi bi-@hint.Order-square-fill me-1"></i>@hint.HintText
+                                </li>
+                            }
+                        }
                     </ul>
                 </div>
                 <div class="tab-pane border-0 fade" id="nav-guess" role="tabpanel" aria-labelby="nav-guess-tab" tabindex="0">
                     <ul class="list-group mb-3" id="Guesses">
-                        @for ( int i = 0; i < guesses.Count(); i++)
+                        @for (int i = 0; i < guesses.Count(); i++)
                         {
                             var guess = guesses[i];
 
@@ -107,13 +107,12 @@
                                     <span>@guess.Title (@guess.ReleaseYear)</span>
                                 </li>
                             }
-
                         }
                     </ul>
                 </div>
             </div>
             <div class="hstack gap-2 justify-content-end">
-                <button class="btn btn-info">Play Again</button>
+                <button class="btn btn-info" @onclick="PlayAgain">Play Again</button>
                 <button class="btn controls-btn">
                     <i class="bit bi-question-circle text-secondary"></i>
                 </button>
@@ -121,10 +120,16 @@
                     <i class="bit bi-gear text-secondary"></i>
                 </button>
             </div>
-
         </div>
     </div>
 </div>
+
+<WinLossOverlay IsVisible=@showOverlay
+IsWin=@win
+Guesses="@guesses.Count"
+MovieTitle="@randomMovie.Title"
+OnClose="CloseOverlay" />
+
 
 
 @code {
@@ -140,6 +145,7 @@
     List<Square> squareList = new();
     private List<Movie> movies = [];
     private List<Guess> guesses = new();
+    private List<Hint> hints = new();
 
     private Movie randomMovie = new();
 
@@ -148,7 +154,12 @@
     private Timer? inactivityTimer;
     private int debounceDelay = 500; // milliseconds
 
+    //game state variables
     private bool win = false;
+    private int maxGuesses = 5;
+    private bool gameOver = false;
+    private bool showOverlay = false;
+
 
     #endregion
 
@@ -165,11 +176,9 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
 
-        if (firstRender || randomMovie.Id== 0)
+        if (firstRender)
         {
-            await ResetGameState();
-            await NewGame();
-            await showRandomSqaure();
+            await PlayAgain();
             StateHasChanged();
         }
 
@@ -185,7 +194,26 @@
         win = false;
         randomMovie = await tmdbService.GetRandomMovieAsync(yearStart, yearEnd, selectedGenres);
 
+        await GetHints(randomMovie.Id);
 
+
+    }
+
+    private async Task PlayAgain()
+    {
+        //reset the game state
+        await ResetGameState();
+
+        await NewGame();
+
+        Task.Delay(2000).Wait();
+
+        await showRandomSqaure();
+    }
+
+    private void CloseOverlay()
+    {
+        showOverlay = false;
     }
 
     private async Task ResetGameState()
@@ -197,6 +225,11 @@
             Square newSqaure = new();
             squareList.Add(newSqaure);
         }
+
+        guesses = new();
+        win = false;
+        gameOver = false;
+        showOverlay = false;
     }
 
     private async Task HandleSubmit()
@@ -207,9 +240,9 @@
             //show the movie poster
             StateHasChanged();
 
-            //reveal the poster
             RevealPoster();
             win = true;
+            gameOver = true;
 
         }
         else
@@ -217,6 +250,9 @@
             //show a new sqaure
             await showRandomSqaure();
             win = false;
+            gameOver = false;
+
+
         }
 
         guesses.Add(new Guess
@@ -225,6 +261,20 @@
                 ReleaseYear = DateTime.TryParse(formModel.ReleaseDate, out var date) ? date.Year.ToString() : "Unkown",
                 Correct = win
             });
+
+
+        //check if the user has reached the max guesses
+        if (guesses.Count >= maxGuesses)
+        {
+            gameOver = true;
+            win = false;
+            RevealPoster();
+        }
+
+        if (gameOver)
+        {
+            showOverlay = true;
+        }
     }
 
     private async Task showRandomSqaure()
@@ -247,8 +297,10 @@
         foreach (var square in squareList)
         {
             square.Show = true;
-        };
+        }
+    ;
     }
+
     #endregion
 
     #region Search TypeAhead
@@ -291,10 +343,10 @@
         {
 
             await InvokeAsync(async () =>
-            {
-                await SearchMovies();
-                ResetInactivityTimer();
-            });
+        {
+            await SearchMovies();
+            ResetInactivityTimer();
+        });
         }, null, debounceDelay, Timeout.Infinite);
 
     }
@@ -307,11 +359,11 @@
         {
             // Handle inactivity (e.g., show a message, log out, etc.)
             InvokeAsync(() =>
-            {
-                movies.Clear();
-                StateHasChanged();
+        {
+            movies.Clear();
+            StateHasChanged();
 
-            });
+        });
         }, null, 10000, Timeout.Infinite); // 30 seconds of inactivity
     }
 
@@ -320,6 +372,68 @@
         formModel.MovieTitle = movie.Title;
         formModel.ReleaseDate = movie.ReleaseDate;
         movies.Clear();
+    }
+
+    #endregion
+
+    #region UI Helpers
+
+    public async Task GetHints(int movieId)
+    {
+        var moviedetails = await tmdbService.GetMovieDetailsAsync(movieId);
+
+        if (moviedetails is not null)
+        {
+            var releaseYear = DateTime.TryParse(moviedetails.ReleaseDate, out var date) ? date.Year.ToString() : "";
+            string genreName = moviedetails.Genres.FirstOrDefault()?.Name ?? "";
+            string tagline = moviedetails.Tagline ?? "";
+            string leadActor = moviedetails.Credits?.Cast?.FirstOrDefault()?.Name ?? "";
+            string director = moviedetails.Credits?.Crew?.FirstOrDefault(c => c.Job == "Director")?.Name ?? "";
+            string overview = moviedetails.Overview ?? "";
+
+            //build a hint #1
+            string taglineHint = string.IsNullOrEmpty(tagline)
+                                ? "No tagline for this movie - the mystery deepens"
+                                : $"Here's the movie tagline: \"{tagline}\"";
+
+            string actorHint = string.IsNullOrEmpty(leadActor)
+                                ? "The lead actor's is a bit of a mystery.. fitting right?"
+                                : $"{leadActor} takes the spoltlight in this one";
+
+            string directorHint = string.IsNullOrEmpty(director)
+                                ? "Directed by... Well, that part's classified."
+                                : $"{director} is the mastermind behind this one";
+
+            string genreHint = string.IsNullOrEmpty(genreName)
+                                ? "Genre? It's a mystery wrapped in an enigma."
+                                : $"This {genreName.ToLower()} flick dropped in {releaseYear}.";
+
+
+            string overviewHint = string.IsNullOrEmpty(overview)
+                ? "Overview? More like over-guessing!"
+                : $"Here's a sneak peek: \"{overview}\"";
+        
+       hints = new List<Hint>
+            {
+                BuildHint(taglineHint, 1),
+                BuildHint(actorHint, 2),
+                BuildHint(directorHint, 3),
+                BuildHint(genreHint, 4),
+                BuildHint(overviewHint, 5)
+            };
+
+        } 
+        
+    }
+
+    public Hint BuildHint(string hintText, int order)
+    {
+        return new Hint
+            {
+                HintText = hintText,
+                show = false,
+                Order = order
+            };
     }
 
     #endregion
@@ -341,8 +455,15 @@
     public class Guess
     {
         public string? Title { get; set; } = "";
-        public string? ReleaseYear { get; set; } = "";  
+        public string? ReleaseYear { get; set; } = "";
         public bool Correct { get; set; } = false;
+    }
+
+    public class Hint
+    {
+        public string? HintText { get; set; } = "";
+        public bool show { get; set; }
+        public int Order { get; set; }
     }
 
     #endregion

@@ -1,0 +1,46 @@
+﻿.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.3s ease-in-out;   
+}
+
+.result-card {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    border: 2px solid #4444;
+    padding: 2rem;
+    box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    color: #fff;
+    max-width: 500px;
+    animation: fadeIn .5s ease-in-out;  
+}
+
+.overlay.win {
+    border: 2px solid green;
+    
+}
+
+.overlay.loss {
+    border: 2px solid red;
+}
+
+@keyframes fadeIn {
+    from {
+       opacity: 0;
+       transform: scale(.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);    
+    }
+}
+

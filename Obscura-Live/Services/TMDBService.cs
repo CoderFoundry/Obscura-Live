@@ -53,7 +53,7 @@ namespace Obscura_Live.Services
             string releaseDateGte = "";
             string releaseDateLte = "";
 
-            string baseUrl = "discover/movie?include_adult=false&include_video-false&region=US&with_origin_country=US&with_original_language=en&sort_by=vote_count.desc&vote_count.gte=200";
+            string baseUrl = "discover/movie?include_adult=false&include_video=false&region=US&with_origin_country=US&with_original_language=en&sort_by=vote_count.desc&vote_count.gte=200";
             Movie randomMovie = new();
 
             if(yearStart is not null && yearEnd is not null && yearStart < yearEnd)
@@ -126,6 +126,16 @@ namespace Obscura_Live.Services
                 ?? throw new HttpIOException(HttpRequestError.InvalidResponse, "Search results could not be loaded");
 
             return response.Results.Where(r => r.VoteCount > 150).ToList();
+        }
+
+        public async Task<MovieDetails> GetMovieDetailsAsync(int movieId)
+        {
+            var url = $"movie/{movieId}?append_to_response=videos,credits&language=en-US";
+           
+            MovieDetails? response = await _http.GetFromJsonAsync<MovieDetails>(url, _jsonOptions)
+                ?? throw new HttpIOException(HttpRequestError.InvalidResponse, "Movie details could not be loaded");
+           
+            return response;
         }
     }
 }

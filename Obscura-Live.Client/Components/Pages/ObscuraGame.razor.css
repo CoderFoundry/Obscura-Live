@@ -31,6 +31,7 @@
     border-width: .1rem;
     border-style: solid;
     border-radius: 20px;
+    min-height: 400px;
 }
 
 
@@ -127,7 +128,7 @@
     padding: 0;
     max-height: 200px;
     overflow-y: auto;
-    z-index: 1000; /*Ensure it is over the poster*/
+    z-index: 500; /*Ensure it is over the controls*/
 }
 
     .suggestions li {
