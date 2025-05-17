@@ -9,5 +9,7 @@ namespace Obscura_Live.Client.Services
         Task<List<Movie>> SearchMoviesAsync(string query, int page = 1);
 
         Task<MovieDetails> GetMovieDetailsAsync(int movieId);
+
+        Task<List<Genre>> GetGenresAsync();
     }
 }

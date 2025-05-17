@@ -113,12 +113,12 @@
             </div>
             <div class="hstack gap-2 justify-content-end">
                 <button class="btn btn-info" @onclick="PlayAgain">Play Again</button>
-                <button class="btn controls-btn">
+                <button class="btn controls-btn" data-bs-toggle="modal" data-bs-target="#instructionsModal">
                     <i class="bi bi-question-circle text-secondary"></i>
-                </button>
-                <button class="btn controls-btn">
+                </button>                
+                <button class="btn controls-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSettings" aria-controls="offcanvasRight">
                     <i class="bi bi-gear text-secondary"></i>
-                </button>
+                </button>               
             </div>
         </div>
     </div>
@@ -130,7 +130,9 @@ Guesses="@guesses.Count"
 MovieTitle="@randomMovie.Title"
 OnClose="CloseOverlay" />
 
+<InstructionsModal />
 
+<GameSettings Genres="genres" OnSubmit="ApplyGameSettings" />
 
 @code {
 
@@ -142,10 +144,12 @@ OnClose="CloseOverlay" />
     private int yearStart = 1970;
     private int yearEnd = 2025;
     private string selectedGenres = "";
+
     List<Square> squareList = new();
     private List<Movie> movies = [];
     private List<Guess> guesses = new();
     private List<Hint> hints = new();
+    private List<Genre> genres = new(); 
 
     private Movie randomMovie = new();
 
@@ -166,10 +170,7 @@ OnClose="CloseOverlay" />
     #region Lifecycle Methods
     protected override async Task OnInitializedAsync()
     {
-        // Initialize the game state
-        //await ResetGameState();
-        //await showRandomSqaure();
-
+        genres = await tmdbService.GetGenresAsync();
 
     }
 
@@ -208,7 +209,7 @@ OnClose="CloseOverlay" />
 
         Task.Delay(2000).Wait();
 
-        await showRandomSqaure();
+        showRandomSqaure();
     }
 
     private void CloseOverlay()
@@ -230,6 +231,26 @@ OnClose="CloseOverlay" />
         win = false;
         gameOver = false;
         showOverlay = false;
+        formModel = new();
+        hints = new();
+    }
+
+    private async Task ApplyGameSettings(GameSettingsModel gameSettings)
+    {
+        yearStart = gameSettings.YearStart; 
+        yearEnd = gameSettings.YearEnd;
+
+        if (gameSettings.SelectedGenre == 0)
+        {
+            selectedGenres = "";    
+        }
+        else
+        {
+            selectedGenres = gameSettings.SelectedGenre.ToString(); 
+        }
+
+        //reset the game state
+        await PlayAgain();
     }
 
     private async Task HandleSubmit()
@@ -240,15 +261,22 @@ OnClose="CloseOverlay" />
             //show the movie poster
             StateHasChanged();
 
+            //show the poster
             RevealPoster();
+            
+            //show all the hints
+            showAllHints();
+            
             win = true;
             gameOver = true;
+
+           
 
         }
         else
         {
             //show a new sqaure
-            await showRandomSqaure();
+            showRandomSqaure();
             win = false;
             gameOver = false;
 
@@ -277,7 +305,7 @@ OnClose="CloseOverlay" />
         }
     }
 
-    private async Task showRandomSqaure()
+    private void showRandomSqaure()
     {
         Random random = new Random();
 
@@ -291,6 +319,13 @@ OnClose="CloseOverlay" />
         }
     }
 
+    private void showAllHints()
+    {
+       foreach (var hint in hints)
+        {
+            hint.show = true;
+        }        
+    }
 
     private void RevealPoster()
     {
@@ -385,7 +420,7 @@ OnClose="CloseOverlay" />
         if (moviedetails is not null)
         {
             var releaseYear = DateTime.TryParse(moviedetails.ReleaseDate, out var date) ? date.Year.ToString() : "";
-            string genreName = moviedetails.Genres.FirstOrDefault()?.Name ?? "";
+            string genreName = moviedetails.Genres?.FirstOrDefault()?.Name ?? "";
             string tagline = moviedetails.Tagline ?? "";
             string leadActor = moviedetails.Credits?.Cast?.FirstOrDefault()?.Name ?? "";
             string director = moviedetails.Credits?.Crew?.FirstOrDefault(c => c.Job == "Director")?.Name ?? "";

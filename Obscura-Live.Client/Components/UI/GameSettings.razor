@@ -1,0 +1,87 @@
+﻿@using System.ComponentModel.DataAnnotations
+@inject IJSRuntime JSRuntime    
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasSettings" aria-labelledby="offcanvasRightLabel" data-bs-theme="dark">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasRightLabel">Game Settings</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <EditForm Model="formModel" OnValidSubmit="HandleSubmit">
+           <DataAnnotationsValidator />
+           <ValidationSummary />
+              <div class="mb-3">
+                <label for="YearStart" class="form-label">Year Start</label>
+                <InputSelect class="form-select" @bind-Value="formModel.YearStart">
+                    <option value="1940">1940</option>
+                    <option value="1950">1950</option>
+                    <option value="1960">1960</option>
+                    <option value="1970">1970</option>
+                    <option value="1980">1980</option>
+                    <option value="1990">1990</option>
+                    <option value="2000">2000</option>
+                    <option value="2020">2020</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => formModel.YearStart)" />
+              </div>
+            <div class="mb-3">
+                <label for="YearEnd" class="form-label">Year End</label>
+                <InputSelect id="YearEnd" class="form-select" @bind-Value="formModel.YearEnd">
+                    <option value="@thisYear">@thisYear</option>
+                    <option value="1940">1940</option>
+                    <option value="1950">1950</option>
+                    <option value="1960">1960</option>
+                    <option value="1970">1970</option>
+                    <option value="1980">1980</option>
+                    <option value="1990">1990</option>
+                    <option value="2000">2000</option>
+                    <option value="2020">2020</option>
+                    <option value="2030">2030</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => formModel.YearEnd)" />
+            </div>
+            <div class="mb-3">
+                <label for="genreSelect" class="form-label">Select Genre</label>
+                <InputSelect class="form-select" @bind-Value="formModel.SelectedGenre">
+                    <option selected value="0">All Genres</option>
+                    @foreach (var genre in Genres)
+                    {
+                        <option value="@genre.Id">@genre.Name</option>
+                    }
+                </InputSelect>   
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn-info btn">
+                    Save Changes
+                </button>
+            </div>
+       </EditForm>
+    </div>
+</div>
+
+@code {
+    private GameSettingsModel formModel = new();
+
+    [Parameter, EditorRequired]
+    public List<Genre> Genres { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<GameSettingsModel> OnSubmit { get; set; }
+
+
+    private string thisYear = DateTime.Now.Year.ToString(); 
+
+    private async Task HandleSubmit()
+    {
+       
+        // Handle form submission logic here
+        // For example, you can call a service to save the settings
+        //await Task.CompletedTask; // Placeholder for async operation
+        await OnSubmit.InvokeAsync(formModel);
+
+        await JSRuntime.InvokeVoidAsync("eval", "bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasSettings'))?.hide()");
+
+
+
+    }
+}

@@ -137,5 +137,14 @@ namespace Obscura_Live.Services
            
             return response;
         }
+
+        public async Task<List<Genre>> GetGenresAsync()
+        {
+            var url = "genre/movie/list?language=en-Us";
+            GenreResponse? response = await _http.GetFromJsonAsync<GenreResponse>(url, _jsonOptions)
+                ?? throw new HttpIOException(HttpRequestError.InvalidResponse, "Genres could not be loaded");
+            return response?.Genres?? new List<Genre>();
+        }
+      
     }
 }
