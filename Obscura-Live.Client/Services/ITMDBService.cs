@@ -11,5 +11,7 @@ namespace Obscura_Live.Client.Services
         Task<MovieDetails> GetMovieDetailsAsync(int movieId);
 
         Task<List<Genre>> GetGenresAsync();
+
+        Task<Video?> GetMovieTrailerAsync(int movieId);
     }
 }

@@ -1,21 +1,45 @@
-﻿
+﻿@inject ITMDBService TMDBService
+
 @if (IsVisible)
 {
-<div class="overlay @(IsWin ? "win" : "loss")">
-    <div class="result-card text-center">
-        <h1>@(IsWin ? "You Got It" : "Game Over Loser")</h1>
-        <p>
-          @(IsWin ? $"You guessed {MovieTitle} in {Guesses} guesses!" : $"The movie was: {MovieTitle}.")
-        </p>
-        <button class="btn btn-primary mt-3" @onclick="OnClose">Close</button>
+    <div class="overlay @(IsWin ? "win" : "loss")">
+        <div class="result-card text-center">
+            <h1>@(IsWin ? "You Got It" : "Game Over Loser")</h1>
+            <p>
+                @(IsWin ? $"You guessed {movie.Title} in {Guesses} guesses!" : $"The movie was: {movie.Title}.")
+            </p>
+            <div class="ratio ratio-16x9 mt-1 mb-1">
+                <iframe src="@movieTrailerUrl" title="@movie.Title" allowfullscreen>
+                </iframe>
+            </div>
+            <button class="btn btn-primary mt-3" @onclick="OnClose">Close</button>
+        </div>
     </div>
-</div>
 }
 @code {
-    [Parameter] public bool IsVisible { get; set; }    
-    [Parameter] public bool IsWin{ get; set; }
-    [Parameter] public string? MovieTitle { get; set; } 
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public bool IsWin { get; set; }
     [Parameter] public int Guesses { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public Movie movie { get; set; }
 
+    private Video? movieTrailer;
+    private string? movieTrailerUrl;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (movie != null && movie.Id != 0)
+        {
+            movieTrailer = await TMDBService.GetMovieTrailerAsync(movie.Id);
+          
+            if (movieTrailer != null)
+            {
+                movieTrailerUrl = $"https://www.youtube.com/embed/{movieTrailer.Key}";
+            }
+            else
+            {
+                movieTrailerUrl = null;
+            }
+        }
+    }
 }
