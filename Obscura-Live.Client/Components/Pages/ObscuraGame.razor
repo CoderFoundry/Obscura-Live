@@ -1,8 +1,10 @@
 ﻿@page "/"
 @using System.ComponentModel.DataAnnotations
 
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
 @inject ITMDBService tmdbService
+@inject IGameSettingsService gameSettingsService
 
 <div class="container-xxl text-center mt-3">
     <div>
@@ -132,7 +134,7 @@ OnClose="CloseOverlay" />
 
 <InstructionsModal />
 
-<GameSettings Genres="genres" OnSubmit="ApplyGameSettings" />
+<GameSettings Genres="genres" Gamesettings="gameSettings" OnSubmit="ApplyGameSettings" />
 
 @code {
 
@@ -150,6 +152,7 @@ OnClose="CloseOverlay" />
     private List<Guess> guesses = new();
     private List<Hint> hints = new();
     private List<Genre> genres = new(); 
+    private GameSettingsModel gameSettings = new GameSettingsModel();
 
     private Movie randomMovie = new();
 
@@ -171,7 +174,9 @@ OnClose="CloseOverlay" />
     protected override async Task OnInitializedAsync()
     {
         genres = await tmdbService.GetGenresAsync();
-
+        gameSettings = await gameSettingsService.GetGameSettings();
+        await ApplyGameSettings(gameSettings);
+        
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -179,8 +184,9 @@ OnClose="CloseOverlay" />
 
         if (firstRender)
         {
-            await PlayAgain();
-            StateHasChanged();
+           
+          // await PlayAgain();
+          //  StateHasChanged();
         }
 
 
@@ -248,6 +254,8 @@ OnClose="CloseOverlay" />
         {
             selectedGenres = gameSettings.SelectedGenre.ToString(); 
         }
+
+        await gameSettingsService.SaveGameSettingsAsync(gameSettings);
 
         //reset the game state
         await PlayAgain();

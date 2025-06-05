@@ -10,6 +10,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddHttpClient<ITMDBService, TMDBService>();
+builder.Services.AddScoped<IGameSettingsService, GameSettingsService>();
 
 
 var app = builder.Build();
