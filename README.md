@@ -1,5 +1,5 @@
 # Obscura Live
-![Obscura Live](/assets/thumbnail_obscura_YT.jpg)
+![Obscura Live](/Assets/thumbnail_obscura_YT.jpg)
 
 Welcome to the **Obscura Live** repository! In this project, we built a poster guessing game using Blazor and the TMDB API. Each session guides users through building a movie trivia experience, where they attempt to identify obscured movie posters with minimal clues. It's a fun way to learn full-stack development while creating an interactive and visually engaging web application.
 
