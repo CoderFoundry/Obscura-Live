@@ -7,12 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obscura-Live", "Obscura-Liv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Obscura-Live.Client", "Obscura-Live.Client\Obscura-Live.Client.csproj", "{AC8195FC-51FF-4855-AFC4-157079EAB1C6}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "repoAssets", "repoAssets", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		Z:\Downloads\obscura_b.png = Z:\Downloads\obscura_b.png
-		Z:\Downloads\thumbnail_obscura_YT.jpg = Z:\Downloads\thumbnail_obscura_YT.jpg
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
